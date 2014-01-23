@@ -1,0 +1,109 @@
+<?php
+/**
+* @file
+* A set of blocks that extends MS Affiliates Module.
+*/
+
+function ms_affiliate_blocks_block_info() {
+  $blocks['ms_affiliate_affiliate-payout'] = array(
+    'info' => t('Ambassador - Total Affiliate Payout'),
+  );
+  $blocks['ms_affiliate_numbers'] = array (
+    'info' => t('Ambassador - Total Number of Ambassadors'),
+  );
+  $blocks['ms_affiliate_individual-signups'] = array (
+    'info' => t('Ambassador - Individual Signups'),
+  );
+  $blocks['ms_affiliate_individual-dollars'] = array (
+    'info' => t('Ambassador - Individual Dollars'),
+  );
+  $blocks['ms_affiliate_individual-rank'] = array (
+    'info' => t('Ambassador - Individual Ranking'),
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function ms_affiliate_blocks_block_view($delta) {
+
+  $block = array();
+
+  switch ($delta) {
+
+    case 'ms_affiliate_affiliate-payout':
+      $block['subject'] = t('Total Payout to date');
+      $block['content'] = ms_affiliate_block_payout_html();
+      break;
+    case 'ms_affiliate_numbers':
+      $block['subject'] = t('No. of America Strong Ambassadors to date');
+      $block['content'] = ms_affiliate_block_num_ambassadors_html();
+      break;
+    case 'ms_affiliate_individual-signups':
+      $block['subject'] = t('No. of People you\'ve signed up to date.');
+      $block['content'] = ms_affiliate_block_individual_sign_ups_html();
+      break;
+    case 'ms_affiliate_individual-dollars':
+      $block['subject'] = t('Dollars you\'ve earned to date');
+      $block['content'] = ms_affiliate_block_individual_dollars_html();
+      break;
+    case 'ms_affiliate_individual-rank':
+      $block['subject'] = t('Individual Ranking');
+      $block['content'] = ms_affiliate_block_individual_ranking_html();
+      break;
+  }
+  return $block;
+}
+
+/**
+ * HTML functions for hook_block_view().
+ */
+function ms_affiliate_block_payout_html() {
+  $result = db_query("SELECT SUM(balance) FROM {ms_affiliates_balance}")->fetchField();
+  return $result;
+}
+
+function ms_affiliate_block_num_ambassadors_html() {
+  $result = db_query("SELECT COUNT(DISTINCT AID) FROM {ms_affiliates_genealogy}")->fetchField();
+  return $result;
+}
+
+function ms_affiliate_block_individual_sign_ups_html() {
+  global $user;
+  $uid = $user->uid;
+
+  $result = db_query("SELECT COUNT(uid) FROM {ms_affiliates_genealogy} WHERE aid = $uid")->fetchField();
+
+  if(is_null($result)) {
+    $result = 0;
+  }
+
+  return $result;
+}
+
+function ms_affiliate_block_individual_dollars_html() {
+  global $user;
+  $uid = $user->uid;
+
+  $result = db_query("SELECT SUM(balance) FROM {ms_affiliates_balance} WHERE uid = $uid")->fetchField();
+  return $result;
+}
+
+function ms_affiliate_block_individual_ranking_html() {
+  global $user;
+  $uid = $user->uid;
+
+  $query = db_query("SELECT COUNT(aid) AS aidnum, aid FROM {ms_affiliates_genealogy} GROUP BY aid ORDER BY aidnum DESC");
+
+  $i = 0;
+
+  foreach ($query as $result){
+    $i++;
+    if($result->aid == $uid){
+      $rank = $i;
+    }
+  }
+  return $rank;
+}

@@ -1,0 +1,7 @@
+name = MS Affiliate Blocks
+description = A group of blocks that extend the MS Affiliates Module.
+core = 7.x
+
+package = MoneyScripts
+
+dependencies[] = ms_affiliates
