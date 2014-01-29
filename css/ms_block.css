@@ -1,0 +1,29 @@
+/* Dollar Amounts */
+
+.dollar {
+    font-size: 60px;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 28px;
+}
+
+.sign {
+    font-size: 24px;
+    font-weight: 100;
+    vertical-align: super;
+}
+
+/* Total Payout Block */
+
+#block-ms-affiliate-blocks-ms-affiliate-affiliate-payout > .content {
+    background: #09A3D8;
+    color: #fff;
+    text-align: center;
+    height: 80px;
+    padding: 60px 0;
+}
+#block-ms-affiliate-blocks-ms-affiliate-affiliate-payout > .content > p {
+    font-size: 14px;
+    line-height: 22px;
+}
+

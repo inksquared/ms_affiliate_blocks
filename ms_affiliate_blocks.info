@@ -4,4 +4,4 @@ core = 7.x
 
 package = MoneyScripts
 
-dependencies[] = ms_affiliates
+stylesheets[all][] = css/ms_block.css
