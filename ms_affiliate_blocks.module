@@ -8,19 +8,12 @@ function ms_affiliate_blocks_block_info() {
   $blocks['ms_affiliate_affiliate-payout'] = array(
     'info' => t('Ambassador - Total Affiliate Payout'),
   );
-  $blocks['ms_affiliate_numbers'] = array (
-    'info' => t('Ambassador - Total Number of Ambassadors'),
+  $blocks['ms_affiliate_affiliate-overview'] = array(
+    'info' => t('Ambassador - Program Overview'),
   );
-  $blocks['ms_affiliate_individual-signups'] = array (
-    'info' => t('Ambassador - Individual Signups'),
+  $blocks['ms_affiliate_individual-overview'] = array(
+    'info' => t('Ambassador - Individual Overview'),
   );
-  $blocks['ms_affiliate_individual-dollars'] = array (
-    'info' => t('Ambassador - Individual Dollars'),
-  );
-  $blocks['ms_affiliate_individual-rank'] = array (
-    'info' => t('Ambassador - Individual Ranking'),
-  );
-
   return $blocks;
 }
 
@@ -36,21 +29,11 @@ function ms_affiliate_blocks_block_view($delta) {
     case 'ms_affiliate_affiliate-payout':
       $block['content'] = ms_affiliate_block_payout_html();
       break;
-    case 'ms_affiliate_numbers':
-      $block['subject'] = t('No. of America Strong Ambassadors to date');
-      $block['content'] = ms_affiliate_block_num_ambassadors_html();
+    case 'ms_affiliate_affiliate-overview':
+      $block['content'] = ms_affiliates_overview_html();
       break;
-    case 'ms_affiliate_individual-signups':
-      $block['subject'] = t('No. of People you\'ve signed up to date.');
-      $block['content'] = ms_affiliate_block_individual_sign_ups_html();
-      break;
-    case 'ms_affiliate_individual-dollars':
-      $block['subject'] = t('Dollars you\'ve earned to date');
-      $block['content'] = ms_affiliate_block_individual_dollars_html();
-      break;
-    case 'ms_affiliate_individual-rank':
-      $block['subject'] = t('Individual Ranking');
-      $block['content'] = ms_affiliate_block_individual_ranking_html();
+    case 'ms_affiliate_individual-overview':
+      $block['content'] = ms_affiliates_individual_html();
       break;
   }
   return $block;
@@ -66,55 +49,73 @@ function ms_affiliate_block_payout_html() {
 
   $result = db_query("SELECT SUM(balance) FROM {ms_affiliates_balance}")->fetchField();
 
-  db_set_active();
+  $result = $result/1;
 
-  $fullHtml = "<span class='dollar'><span class='sign'>$</span>" . $result . "</span><p>Money paid out to<br>Ambassadors to date</p>";
+  $fullHtml = "<span class='number'><span class='sign'>$</span>" . $result . "</span><p>Money paid out to<br>Ambassadors to date</p>";
+
+  db_set_active();
 
   return $fullHtml;
 }
 
-function ms_affiliate_block_num_ambassadors_html() {
-  //$result = db_query("SELECT COUNT(DISTINCT AID) FROM {ms_affiliates_genealogy}")->fetchField();
+function ms_affiliates_overview_html() {
 
-  return $result;
+  db_set_active('pantheon');
+
+  $ambassadorCount = db_query("SELECT COUNT(DISTINCT aid) FROM {ms_affiliates_genealogy}")->fetchField();
+
+  $ambassadorSignups = db_query("SELECT COUNT(uid) FROM {ms_affiliates_genealogy}")->fetchField();
+
+  $totalPayout = db_query("SELECT SUM(balance) FROM {ms_affiliates_balance}")->fetchField();
+
+  $totalPayout = $totalPayout/1;
+
+  db_set_active();
+
+  $html = "<div id='count'><span class='number'>" . $ambassadorCount . "</span><p>No. of AmericaStrong<br>Ambassadors to date</p></div><div id='signups'><span class='number'>" . $ambassadorSignups . "</span><p>No. of people enrolled<br>by Ambassadors to date</p></div><div><span class='number'><span class='sign'>$</span>" . $totalPayout . "</span><p>Money paid out to<br>Ambassadors to date</p></div>";
+
+  return $html;
 }
 
-function ms_affiliate_block_individual_sign_ups_html() {
-  //global $user;
-  //$uid = $user->uid;
+function ms_affiliates_individual_html() {
 
-  //$result = db_query("SELECT COUNT(uid) FROM {ms_affiliates_genealogy} WHERE aid = $uid")->fetchField();
+  global $user;
+  $uid = $user->uid;
 
-//  if(is_null($result)) {
-//    $result = 0;
-//  }
+  db_set_active('pantheon');
 
-  //return $result;
+  $individualDollars = db_query("SELECT SUM(balance) FROM {ms_affiliates_balance} WHERE uid = $uid")->fetchField();
+
+  $individualDollars = $individualDollars/100;
+
+
+  $individualSignups = db_query("SELECT COUNT(uid) FROM {ms_affiliates_genealogy} WHERE aid = $uid")->fetchField();
+
+  if(is_null($individualSignups)) {
+    $individualSignups = 0;
+  }
+
+  $ambassadorCount = db_query("SELECT COUNT(DISTINCT aid) FROM {ms_affiliates_genealogy}")->fetchField();
+
+  $individualRank = db_query("SELECT COUNT(aid) AS aidnum, aid FROM {ms_affiliates_genealogy} GROUP BY aid ORDER BY aidnum DESC");
+
+  $i = 0;
+
+  foreach ($individualRank as $result){
+    $i++;
+
+    if($result->aid == $uid){
+      $rank = $i;
+    }
+  }
+
+  if(!$rank) {
+    $rank = $ambassadorCount;
+  }
+
+  $html = "<h2 class='ambassador-title'>Welcome " . $user->name . "!</h2><p>Ambassador ID#<br>" . $uid . "</p><div id='signups'><span class='number'>" . $individualSignups . "</span><p>No. of people you’ve<br>enrolled to date</p></div><div id='dollars'><span class='number'><span class='sign'>$</span>" . $individualDollars . "</span><p>Dollars you’ve earned<br>to date</p></div><div id='ranking'><span class='number'>" . $rank . "</span><p>Your ranking among all Ambassadors</p></div>";
+
+  db_set_active();
+
+  return $html;
 }
-
-function ms_affiliate_block_individual_dollars_html() {
-//  global $user;
-//  $uid = $user->uid;
-//
-//  $result = db_query("SELECT SUM(balance) FROM {ms_affiliates_balance} WHERE uid = $uid")->fetchField();
-//  return $result;
-}
-
-function ms_affiliate_block_individual_ranking_html() {
-//  global $user;
-//  $uid = $user->uid;
-//
-//  $query = db_query("SELECT COUNT(aid) AS aidnum, aid FROM {ms_affiliates_genealogy} GROUP BY aid ORDER BY aidnum DESC");
-//
-//  $i = 0;
-//
-//  foreach ($query as $result){
-//    $i++;
-//    if($result->aid == $uid){
-//      $rank = $i;
-//    }
-//  }
-//  return $rank;
-}
-
-db_set_active();
